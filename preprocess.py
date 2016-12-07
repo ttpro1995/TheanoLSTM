@@ -41,6 +41,21 @@ def word2vec(sent, word2index_dict):
     array_sent = np.asarray(array_sent)
     return ((array_sent),array(sample_weight))
 
+def demo_tree():
+    small_trees = pytreebank.import_tree_corpus('./trees/dev.txt')
+    small_trees = small_trees[:100]
+    label = []
+    sentences = []
+
+
+    tree = small_trees[6]
+    for l, sent in tree.to_labeled_lines():
+        label.append(l)
+        sentences.append(sent)
+        print(l, sent)
+
+    print('breakpoint')
+
 def preprocess(vocabulary_size):
     # trees = pytreebank.load_sst('trees')
     # trees_train = trees["train"]
@@ -68,3 +83,5 @@ def preprocess(vocabulary_size):
         train_x.append(x)
 
     return (train_x, label)
+
+preprocess(4000)
