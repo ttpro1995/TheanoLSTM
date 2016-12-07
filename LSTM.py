@@ -63,7 +63,8 @@ class LSTM:
 
             # Final output calculation
             # Theano's softmax returns a matrix with one row, we only need the row
-            o = T.nnet.softmax(V.dot(h_t) + c)[0]
+            # o = T.nnet.softmax(V.dot(h_t) + c)[0]
+            o = T.nnet.softmax(V.dot(h_t) + c)
             return [o, h_t, c_t]
 
         [o, h_t, c_t], updates = theano.scan(fn=forward_prop_step,
@@ -75,9 +76,13 @@ class LSTM:
                                                            ])
         # o is an array for o[t] is output of time step t
         # we only care the output of final time step
+
         final_o = o[-1]
         prediction = T.argmax(final_o, axis=0)
-        final_o_error = T.sum(T.nnet.categorical_crossentropy(o, y))
+        print('o ndim', o.ndim)
+        print('final_o', final_o.ndim)
+        print('y ', y.ndim)
+        final_o_error = T.sum(T.nnet.categorical_crossentropy(final_o, y))
 
         cost = final_o_error
 
@@ -103,4 +108,4 @@ class LSTM:
                                                  (self.W, self.W - learning_rate * dW),
                                                  (self.E, self.E - learning_rate * dE),
                                                  (self.b, self.b - learning_rate * db),
-                                                 (self.c, self.c - learning_rate * dc),])
+                                                 (self.c, self.c - learning_rate * dc)])
