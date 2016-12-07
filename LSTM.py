@@ -78,7 +78,7 @@ class LSTM:
         # we only care the output of final time step
 
         final_o = o[-1]
-        prediction = T.argmax(final_o, axis=0)
+        prediction = T.argmax(final_o[0], axis=0)
         print('o ndim', o.ndim)
         print('final_o', final_o.ndim)
         print('y ', y.ndim)
