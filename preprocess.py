@@ -56,6 +56,14 @@ def demo_tree():
 
     print('breakpoint')
 
+def preprocess_full(vocabulary_size):
+    trees = pytreebank.load_sst('trees')
+    trees_train = trees["train"]
+    trees_dev = trees["dev"]
+    trees_test = trees["test"]
+
+
+
 def preprocess(vocabulary_size):
     # trees = pytreebank.load_sst('trees')
     # trees_train = trees["train"]
