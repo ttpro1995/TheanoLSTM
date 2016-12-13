@@ -4,6 +4,7 @@ import time
 import logging
 import sklearn
 from sklearn.model_selection import train_test_split
+import numpy as np
 
 def init_logger():
     logger = logging.getLogger('lstm')
@@ -64,7 +65,7 @@ def main():
     total = len(y_test)
     correct = 0
     for idx, val in enumerate(y_test):
-        pre = model.predict_class(y_test[idx])
+        pre = model.predict_class([y_test[idx]])
         if pre == y_test[idx]:
             correct+=1
     print('correct %d of %d' %(correct, total))

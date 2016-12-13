@@ -8,6 +8,11 @@ import numpy as np
 # o_t = sigmoid(Wx + Uh_pr + b)
 # u_t = tanh(Wx + Uh_pr + b)
 
+# i_t_b = sigmoid(Wx +  Uh_pr + b)
+# f_t_b = sigmoid(Wx + Uh_pr + b)
+# o_t_b = sigmoid(Wx + Uh_pr + b)
+# u_t_b = tanh(Wx + Uh_pr + b)
+
 # c_t = i_t * u_t + f_t*c_pr
 # h_t = o_t*tanh(c_t)
 
@@ -20,9 +25,9 @@ class LSTM:
         self.word_dim = word_dim
         # Wi, Wf, Wo, Wu in one W
         E = np.random.uniform(-np.sqrt(1./word_dim), np.sqrt(1./word_dim), (hidden_dim, word_dim))
-        U = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (4, hidden_dim, hidden_dim))
-        W = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (4, hidden_dim, hidden_dim))
-        V = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (word_dim, hidden_dim))
+        U = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (8, hidden_dim, hidden_dim))
+        W = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (8, hidden_dim, hidden_dim))
+        V = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (2, word_dim, hidden_dim))
         b = np.zeros((4, hidden_dim))
         c = np.zeros(word_dim)
 
@@ -45,8 +50,8 @@ class LSTM:
         b = self.b
         c = self.c
 
-        x = T.ivector('x') #
-        y = T.ivector('y') #
+        x = T.lvector('x') #
+        y = T.lvector('y') #
 
         def forward_prop_step(x_t, h_t_prev, c_t_prev):
 
@@ -64,7 +69,7 @@ class LSTM:
             # Final output calculation
             # Theano's softmax returns a matrix with one row, we only need the row
             # o = T.nnet.softmax(V.dot(h_t) + c)[0]
-            o = T.nnet.softmax(V.dot(h_t) + c)
+            o = T.nnet.softmax(V[0].dot(h_t) + c)
             return [o, h_t, c_t]
 
         [o, h_t, c_t], updates = theano.scan(fn=forward_prop_step,
@@ -76,6 +81,35 @@ class LSTM:
                                                            ])
         # o is an array for o[t] is output of time step t
         # we only care the output of final time step
+
+        def forward_prop_step_b(x_t, h_t_prev_b, c_t_prev_b):
+            # the backward
+
+            # Word embedding layer
+            x_e_b = E[:, x_t]
+
+            i_t_b = T.nnet.sigmoid(W[0].dot(x_e_b) + U[0].dot(h_t_prev_b) + b[0])
+            f_t_b = T.nnet.sigmoid(W[1].dot(x_e_b) + U[1].dot(h_t_prev_b) + b[1])
+            o_t_b = T.nnet.sigmoid(W[2].dot(x_e_b) + U[2].dot(h_t_prev_b) + b[2])
+            u_t_b = T.tanh(W[3].dot(x_e_b) + U[3].dot(h_t_prev_b) + b[3])
+
+            c_t_b = i_t_b * u_t_b + f_t_b * c_t_prev_b
+            h_t_b = o_t_b * T.tanh(c_t)
+
+            # Final output calculation
+            # Theano's softmax returns a matrix with one row, we only need the row
+            # o = T.nnet.softmax(V.dot(h_t) + c)[0]
+            o_b = T.nnet.softmax(V[1].dot(h_t) + c)
+            return [o_b, h_t_b, c_t_b]
+
+        [o_b ,h_t_b, c_t_b], updates = theano.scan(fn=forward_prop_step,
+                                                   sequences=x[::-1],
+                                                   truncate_gradient=self.bptt_truncate,
+                                                   outputs_info=[None,
+                                                                 dict(initial=T.zeros(self.hidden_dim)),
+                                                                 dict(initial=T.zeros(self.hidden_dim))
+                                                                 ])
+
 
         final_o = o[-1]
         prediction = T.argmax(final_o[0], axis=0)
