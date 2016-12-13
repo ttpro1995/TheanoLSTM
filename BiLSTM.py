@@ -25,10 +25,10 @@ class BiLSTM:
         self.word_dim = word_dim
         # Wi, Wf, Wo, Wu in one W
         E = np.random.uniform(-np.sqrt(1./word_dim), np.sqrt(1./word_dim), (hidden_dim, word_dim))
-        U = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (4, hidden_dim, hidden_dim))
+        U = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (8, hidden_dim, hidden_dim))
         W = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (8, hidden_dim, hidden_dim))
-        V = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (2, word_dim, hidden_dim))
-        b = np.zeros((4, hidden_dim))
+        V = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (1, word_dim, hidden_dim*2))
+        b = np.zeros((8, hidden_dim))
         c = np.zeros(word_dim)
 
         self.W = theano.shared(W.astype(theano.config.floatX),name='W')
@@ -69,13 +69,13 @@ class BiLSTM:
             # Final output calculation
             # Theano's softmax returns a matrix with one row, we only need the row
             # o = T.nnet.softmax(V.dot(h_t) + c)[0]
-            o = T.nnet.softmax(V[0].dot(h_t) + c)
-            return [o, h_t, c_t]
+            # o = T.nnet.softmax(V[0].dot(h_t) + c)
+            return [h_t, c_t]
 
-        [o, h_t, c_t], updates = theano.scan(fn=forward_prop_step,
+        [h_t, c_t], updates = theano.scan(fn=forward_prop_step,
                                              sequences=x,
                                              truncate_gradient=self.bptt_truncate,
-                                             outputs_info=[None,
+                                             outputs_info=[
                                                            dict(initial=T.zeros(self.hidden_dim)),
                                                            dict(initial=T.zeros(self.hidden_dim))
                                                            ])
@@ -88,32 +88,34 @@ class BiLSTM:
             # Word embedding layer
             x_e_b = E[:, x_t]
 
-            i_t_b = T.nnet.sigmoid(W[0].dot(x_e_b) + U[0].dot(h_t_prev_b) + b[0])
-            f_t_b = T.nnet.sigmoid(W[1].dot(x_e_b) + U[1].dot(h_t_prev_b) + b[1])
-            o_t_b = T.nnet.sigmoid(W[2].dot(x_e_b) + U[2].dot(h_t_prev_b) + b[2])
-            u_t_b = T.tanh(W[3].dot(x_e_b) + U[3].dot(h_t_prev_b) + b[3])
+            i_t_b = T.nnet.sigmoid(W[4].dot(x_e_b) + U[4].dot(h_t_prev_b) + b[4])
+            f_t_b = T.nnet.sigmoid(W[5].dot(x_e_b) + U[5].dot(h_t_prev_b) + b[5])
+            o_t_b = T.nnet.sigmoid(W[6].dot(x_e_b) + U[6].dot(h_t_prev_b) + b[6])
+            u_t_b = T.tanh(W[7].dot(x_e_b) + U[7].dot(h_t_prev_b) + b[7])
 
             c_t_b = i_t_b * u_t_b + f_t_b * c_t_prev_b
-            h_t_b = o_t_b * T.tanh(c_t)
+            h_t_b = o_t_b * T.tanh(c_t_b)
 
             # Final output calculation
             # Theano's softmax returns a matrix with one row, we only need the row
             # o = T.nnet.softmax(V.dot(h_t) + c)[0]
-            o_b = T.nnet.softmax(V[1].dot(h_t) + c)
-            return [o_b, h_t_b, c_t_b]
+            # o_b = T.nnet.softmax(V[1].dot(h_t) + c)
+            return [h_t_b, c_t_b]
 
-        [o_b ,h_t_b, c_t_b], updates = theano.scan(fn=forward_prop_step,
+        [h_t_b, c_t_b], updates = theano.scan(fn=forward_prop_step_b,
                                                    sequences=x[::-1],
                                                    truncate_gradient=self.bptt_truncate,
-                                                   outputs_info=[None,
-                                                                 dict(initial=T.zeros(self.hidden_dim)),
-                                                                 dict(initial=T.zeros(self.hidden_dim))
-                                                                 ])
+                                                   outputs_info=[dict(initial=T.zeros(self.hidden_dim)),
+                                                                 dict(initial=T.zeros(self.hidden_dim))])
 
 
-        final_o = o[-1]
+        final_h = h_t[-1]
+        final_h_b = h_t_b[-1]
+        final_h_concat = T.concatenate([final_h,final_h_b], axis=0)
+        final_o = T.nnet.softmax(V[0].dot(final_h_concat) + c) # a array with one row
+
+
         prediction = T.argmax(final_o[0], axis=0)
-        print('o ndim', o.ndim)
         print('final_o', final_o.ndim)
         print('y ', y.ndim)
         final_o_error = T.sum(T.nnet.categorical_crossentropy(final_o, y))
