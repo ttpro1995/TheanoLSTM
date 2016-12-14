@@ -57,8 +57,8 @@ def main():
     t1 = time.time()
     model.sgd_step(x_train[10], [y_train[10]], 0.02)
     t2 = time.time()
-    print "SGD Step time: %f milliseconds" % ((t2 - t1) * 1000.)
-    logger.info("SGD Step time: %f milliseconds" % ((t2 - t1) * 1000.))
+    print "SGD Step time: %f milliseconds" % ((t2 - t1))
+    logger.info("SGD Step time: %f seconds" % ((t2 - t1)))
 
     #for idx, val in enumerate(test_label):
     #    pre = model.predict_class(test_x[idx])
@@ -72,7 +72,7 @@ def main():
                 err = model.ce_error(x_train[idx], [y_train[idx]])
                 print('loss at epoch %d idx %d = %f' %(epoch, idx, err))
                 cur_t = time.time()
-                logger.info(('loss at epoch %d idx %d = %f at time %f' %(epoch, idx, err, ((cur_t - t1) * 1000.))))
+                logger.info(('loss at epoch %d idx %d = %f at time %f' %(epoch, idx, err, ((cur_t - t1)))))
 
     logger.info("evaluation")
     total = len(y_test)
