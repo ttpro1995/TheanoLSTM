@@ -6,6 +6,7 @@ import logging
 import sklearn
 from sklearn.model_selection import train_test_split
 import numpy as np
+import util
 
 def init_logger(model_name):
     logger = logging.getLogger(model_name)
@@ -49,9 +50,11 @@ def main():
     logger.info('correct %d of %d' %(correct, total))
 
     if (model_name=='lstm'):
-        model = LSTM(VOCAB_SIZE)
+        model = LSTM(VOCAB_SIZE, hidden_dim=256)
+        modelClass = LSTM
     elif(model_name=='bilstm'):
-        model = BiLSTM(VOCAB_SIZE)
+        model = BiLSTM(VOCAB_SIZE, hidden_dim=256)
+        modelClass = BiLSTM
 
 
     t1 = time.time()
@@ -64,15 +67,17 @@ def main():
     #    pre = model.predict_class(test_x[idx])
     #    print('test ',pre, test_label[idx])
 
-    for epoch in range(1,30):
+    for epoch in range(1,10):
         print('epoch ',epoch)
         for idx ,val in enumerate(y_train):
-            model.sgd_step(x_train[idx], [y_train[idx]], 0.01)
-            if idx % 5000 == 0:
+            model.sgd_step(x_train[idx], [y_train[idx]], 0.02)
+            if idx == 0:
                 err = model.ce_error(x_train[idx], [y_train[idx]])
                 print('loss at epoch %d idx %d = %f' %(epoch, idx, err))
                 cur_t = time.time()
                 logger.info(('loss at epoch %d idx %d = %f at time %f' %(epoch, idx, err, ((cur_t - t1)))))
+                util.save_model_parameters_theano(model, folder='saved_model', status='epoch'+str(epoch))
+
 
     logger.info("evaluation")
     total = len(y_test)
