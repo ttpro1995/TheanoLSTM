@@ -64,14 +64,15 @@ def main():
     #    pre = model.predict_class(test_x[idx])
     #    print('test ',pre, test_label[idx])
 
-    for epoch in range(1,50):
+    for epoch in range(1,30):
         print('epoch ',epoch)
         for idx ,val in enumerate(y_train):
             model.sgd_step(x_train[idx], [y_train[idx]], 0.01)
             if idx % 5000 == 0:
                 err = model.ce_error(x_train[idx], [y_train[idx]])
                 print('loss at epoch %d idx %d = %f' %(epoch, idx, err))
-                logger.info(('loss at epoch %d idx %d = %f' %(epoch, idx, err)))
+                cur_t = time.time()
+                logger.info(('loss at epoch %d idx %d = %f at time %f' %(epoch, idx, err, ((cur_t - t1) * 1000.))))
 
     logger.info("evaluation")
     total = len(y_test)
