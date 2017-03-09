@@ -7,6 +7,9 @@ import sklearn
 from sklearn.model_selection import train_test_split
 import numpy as np
 import util
+import logging
+import logging.config
+import loggly.handlers
 
 def init_logger(model_name):
     logger = logging.getLogger(model_name)
@@ -25,21 +28,30 @@ def init_logger(model_name):
     logger.addHandler(fh)
     logger.addHandler(ch)
 
+    lgy = loggly.handlers.HTTPSHandler('https://logs-01.loggly.com/inputs/07510d18-73c8-4552-8227-264c111ab3ab/tag/python')
+    lgy.setFormatter(formatter)
+    logger.addHandler(lgy)
+
 
 def main():
 
-    model_name = 'bilstm'
+    model_name = 'lstm'
     VOCAB_SIZE = 8000
 
     init_logger(model_name)
     logger = logging.getLogger(model_name)
+    logger.info("-----------------Start ------------------------")
     logger.info('Model %s' % model_name)
     logger.info('Vocabulary size %d'% VOCAB_SIZE)
 
     x, y = preprocess.preprocess(VOCAB_SIZE)
     x_train, x_test, y_train, y_test = train_test_split(
-        x, y, test_size=0.4, random_state=0
+        x, y, test_size=0.25, random_state=0
     )
+
+    logger.info("Training size : %d" %(len(y_train)))
+    logger.info("Test size : %d " %(len(y_test)))
+
     total = len(y_test)
     correct = 0
     for idx, val in enumerate(y_test):

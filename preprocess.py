@@ -71,16 +71,19 @@ def preprocess(vocabulary_size):
     # trees_test = trees["test"]
 
 
-    small_trees = pytreebank.import_tree_corpus('./trees/dev.txt')
-    small_trees = small_trees[:100]
+    small_trees = pytreebank.import_tree_corpus('./trees/train.txt')
     label = []
     sentences = []
 
-
     for tree in small_trees:
-        for l, sent in tree.to_labeled_lines():
-            label.append(l)
-            sentences.append(sent)
+        l, sent = tree.to_labeled_lines()[0]
+        label.append(l)
+        sentences.append(sent)
+
+    #for tree in small_trees:
+    #    for l, sent in tree.to_labeled_lines():
+    #        label.append(l)
+    #        sentences.append(sent)
 
     label = np.asarray(label)
 
@@ -92,4 +95,5 @@ def preprocess(vocabulary_size):
 
     return (train_x, label)
 
-preprocess(4000)
+if __name__ == "__main__":
+    preprocess(4000)

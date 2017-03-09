@@ -113,4 +113,4 @@ class LSTM:
                                                  (self.W, self.W - learning_rate * dW),
                                                  (self.E, self.E - learning_rate * dE),
                                                  (self.b, self.b - learning_rate * db),
-                                                 (self.c, self.c - learning_rate * dc)])
+                                                 (self.c, self.c - learning_rate * dc)], allow_input_downcast=True)
